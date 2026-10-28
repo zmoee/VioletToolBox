@@ -1,0 +1,30 @@
+name: build-win-x64
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish (self-contained win-x64)
+        run: dotnet publish VioletToolBox/SmartTool.csproj -c Release -r win-x64 --self-contained true -p:GeneratePackageOnBuild=false -o publish
+
+      - name: Show output size
+        run: |
+          Get-ChildItem publish | Measure-Object -Property Length -Sum | ForEach-Object { "files: $($_.Count)  total: $([math]::Round($_.Sum/1MB,1)) MB" }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VioletToolBox-win-x64-selfcontained
+          path: publish
+          if-no-files-found: error
+          retention-days: 7
